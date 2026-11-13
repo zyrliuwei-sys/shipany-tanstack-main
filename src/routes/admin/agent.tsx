@@ -87,10 +87,10 @@ function projectSlug(appName: string, origin: string) {
     const url = new URL(origin);
     if (!['localhost', '127.0.0.1', '[::1]'].includes(url.hostname))
       return clean(url.hostname.replace(/^www\./, ''));
-    const base = clean(appName) || 'shipany';
+    const base = clean(appName) || 'site';
     return url.port ? `${base}-${url.port}` : base;
   } catch {
-    return clean(appName) || 'shipany';
+    return clean(appName) || 'site';
   }
 }
 
@@ -113,7 +113,7 @@ function AgentPage() {
   useEffect(() => setOrigin(window.location.origin), []);
 
   const mcpUrl = `${origin}/api/admin/agent/mcp`;
-  // One name per site, so several ShipAny projects can sit side by side in an
+  // One name per site, so several projects can sit side by side in an
   // agent's skill store and MCP config without overwriting each other.
   const project = projectSlug(envConfigs.app_name, origin);
   const snippets = {

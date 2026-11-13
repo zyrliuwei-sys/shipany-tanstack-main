@@ -5,7 +5,7 @@
 // the generated .output/server/wrangler.json; deploy with `pnpm cf:deploy`.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "shipany-tanstack",
+  "name": "application",
   // Pin it: left unset, nitro fills in the build machine's local date, and
   // when local time is a day ahead of UTC the deploy fails with
   // "Can't set compatibility date in the future".
@@ -27,7 +27,7 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "shipany-db",
+      "database_name": "application-db",
       "database_id": "REPLACE_WITH_OUTPUT_OF_WRANGLER_D1_CREATE",
       "migrations_dir": "drizzle",
     },

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useRouterState } from '@tanstack/react-router';
 
 /**
- * ShipAny Code preview bridge — when this app runs inside the sandbox
+ * Sandbox preview bridge — when this app runs inside the sandbox
  * preview iframe, report route changes and the links clickable on the
  * current page to the parent window (its URL bar + route dropdown follow
  * along). A no-op outside an iframe, so production deployments are

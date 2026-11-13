@@ -3,10 +3,10 @@ import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
-// Credentials for one or more ShipAny sites ("projects"), kept in a private
+// Credentials for one or more sites ("projects"), kept in a private
 // local file. Tokens are never printed; `projects` shows only a prefix.
 export function storePath(env = process.env) {
-  return env.SHIPANY_ADMIN_CONFIG || join(homedir(), '.shipany', 'admin-projects.json');
+  return env.SITE_ADMIN_CONFIG || env.SHIPANY_ADMIN_CONFIG || join(homedir(), '.site-admin', 'projects.json');
 }
 
 function siteUrl(raw) {
@@ -22,13 +22,19 @@ function checkName(name) {
 }
 
 export async function readStore(env = process.env) {
-  try {
-    const data = JSON.parse(await readFile(storePath(env), 'utf8'));
-    return { projects: data.projects || {}, default: data.default };
-  } catch (error) {
-    if (error.code === 'ENOENT') return { projects: {}, default: undefined };
-    throw new Error(`Cannot read ${storePath(env)}.`);
+  const paths = [storePath(env)];
+  // Existing credentials remain readable; explicit config paths never fall back.
+  if (!env.SITE_ADMIN_CONFIG && !env.SHIPANY_ADMIN_CONFIG)
+    paths.push(join(homedir(), '.shipany', 'admin-projects.json'));
+  for (const file of paths) {
+    try {
+      const data = JSON.parse(await readFile(file, 'utf8'));
+      return { projects: data.projects || {}, default: data.default };
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw new Error(`Cannot read ${file}.`);
+    }
   }
+  return { projects: {}, default: undefined };
 }
 
 async function writeStore(store, env = process.env) {
@@ -41,13 +47,12 @@ async function writeStore(store, env = process.env) {
 }
 
 /**
- * Resolve which site to talk to: --project NAME, then SHIPANY_ADMIN_PROJECT,
- * then the SHIPANY_ADMIN_URL/TOKEN env pair, then the default or only project.
+ * Resolve --project NAME, project environment, explicit URL/token, then default.
  * @param {{ project?: string, env?: Record<string, string | undefined> }} [options]
  */
 export async function resolveConnection({ project, env = process.env } = {}) {
-  const name = project || env.SHIPANY_ADMIN_PROJECT;
-  if (!name && env.SHIPANY_ADMIN_URL && env.SHIPANY_ADMIN_TOKEN) return adminConnection(env);
+  const name = project || env.SITE_ADMIN_PROJECT || env.SHIPANY_ADMIN_PROJECT;
+  if (!name && (env.SITE_ADMIN_URL || env.SITE_ADMIN_TOKEN || (env.SHIPANY_ADMIN_URL && env.SHIPANY_ADMIN_TOKEN))) return adminConnection(env);
   const store = await readStore(env);
   const names = Object.keys(store.projects);
   const chosen = name || store.default || (names.length === 1 ? names[0] : undefined);
@@ -62,8 +67,11 @@ export async function resolveConnection({ project, env = process.env } = {}) {
 }
 
 export function adminConnection(env = process.env) {
-  if (!env.SHIPANY_ADMIN_URL || !env.SHIPANY_ADMIN_TOKEN) throw new Error('Set SHIPANY_ADMIN_URL and SHIPANY_ADMIN_TOKEN, or add a project.');
-  return { baseUrl: siteUrl(env.SHIPANY_ADMIN_URL), token: env.SHIPANY_ADMIN_TOKEN, project: undefined };
+  const modern = env.SITE_ADMIN_URL !== undefined || env.SITE_ADMIN_TOKEN !== undefined;
+  const url = modern ? env.SITE_ADMIN_URL : env.SHIPANY_ADMIN_URL;
+  const token = modern ? env.SITE_ADMIN_TOKEN : env.SHIPANY_ADMIN_TOKEN;
+  if (!url || !token) throw new Error('Set SITE_ADMIN_URL and SITE_ADMIN_TOKEN, or add a project.');
+  return { baseUrl: siteUrl(url), token, project: undefined };
 }
 
 export async function adminRequest(path, body, connection) {
@@ -103,8 +111,8 @@ const USAGE = `Usage: node admin-client.mjs [--project NAME] <command>
   use NAME                               Set the default project
   remove NAME                            Forget a project
 
-Projects live in ${storePath()} (mode 0600; override with SHIPANY_ADMIN_CONFIG).
-SHIPANY_ADMIN_URL + SHIPANY_ADMIN_TOKEN still work for a single site.`;
+Projects live in ${storePath()} (mode 0600; override with SITE_ADMIN_CONFIG).
+SITE_ADMIN_URL + SITE_ADMIN_TOKEN also work for a single site.`;
 
 async function main() {
   const args = process.argv.slice(2);

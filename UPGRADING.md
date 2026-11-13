@@ -46,6 +46,30 @@ exports, permission codes, and behavior that changes for end users.
 
 ---
 
+## 2026-11-13: Remove upstream product branding and demo articles
+
+Public/default copy now uses neutral account/workspace wording and the
+configured application name (fallback `My App`). The two bundled template
+blog articles, their sitemap entries, the optional upstream footer badge,
+generator metadata and identifying response header are removed. Default
+icons are neutral geometric marks. Existing database articles are not part
+of the bundled demo content; review any locally authored vendor content
+separately when upgrading. The original license remains in `LICENSE`.
+
+`SiteFooter` no longer accepts the `builtWith` prop. Remove that prop from
+custom footer integrations. The local blog registry starts empty; register
+your own MDX posts when adding content. Root/sidebar/footer/email branding
+continues to use `VITE_APP_NAME`; configure the product name before deployment.
+
+The downloadable admin instructions and MCP server display name are now
+`site-admin`. The client accepts `SITE_ADMIN_URL`, `SITE_ADMIN_TOKEN`,
+`SITE_ADMIN_PROJECT` and `SITE_ADMIN_CONFIG`, and new default stores use
+`~/.site-admin/projects.json`. Legacy environment names and saved credentials
+remain readable. No account keys, permissions, sandbox bridge protocol or
+secret-placeholder validation is changed. Update the bundled client and
+instructions together, rebuild and redeploy. Run `pnpm test:copy` and the
+admin integration tests.
+
 ## 2026-11-13: English-only product
 
 Only `en` is enabled in `project.inlang/settings.json`. Chinese catalogs and

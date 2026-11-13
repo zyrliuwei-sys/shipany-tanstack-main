@@ -42,7 +42,7 @@ function ensureDefaultUserAgent() {
   if (fetchPatched) return;
   fetchPatched = true;
   const nativeFetch = globalThis.fetch;
-  const userAgent = `${envConfigs.app_name || 'ShipAny'} (+${envConfigs.app_url})`;
+  const userAgent = `${envConfigs.app_name || 'My App'} (+${envConfigs.app_url})`;
   globalThis.fetch = ((input: RequestInfo | URL, init?: RequestInit) => {
     const headers = new Headers(
       init?.headers ?? (input instanceof Request ? input.headers : undefined)
@@ -72,21 +72,15 @@ function appHost(): string {
   }
 }
 
-// Identifies the stack, like WordPress's generator tag (see also the
-// generator <meta> in __root.tsx). Not a link; adds no SEO value.
-// Response.redirect() and fetched responses have immutable headers: copy
-// those, which also lets the cookie writes below succeed.
-function withPoweredBy(response: Response): Response {
+// Redirects and fetched responses may have immutable headers. Copy those
+// before applying first-party attribution cookies below.
+function withMutableHeaders(response: Response): Response {
   try {
-    if (!response.headers.has('X-Powered-By')) {
-      response.headers.set('X-Powered-By', 'ShipAny');
-    }
+    response.headers.delete('X-Powered-By');
     return response;
   } catch {
     const copy = new Response(response.body, response);
-    if (!copy.headers.has('X-Powered-By')) {
-      copy.headers.set('X-Powered-By', 'ShipAny');
-    }
+    copy.headers.delete('X-Powered-By');
     return copy;
   }
 }
@@ -97,7 +91,7 @@ function withPoweredBy(response: Response): Response {
 export default {
   async fetch(req: Request): Promise<Response> {
     const redirect = redirectChineseEdition(req);
-    if (redirect) return withPoweredBy(redirect);
+    if (redirect) return withMutableHeaders(redirect);
     await ensureCloudflareEnv();
     // Wrap the whole request so anything before/after the handler shares
     // the same db client too.
@@ -106,7 +100,7 @@ export default {
 };
 
 async function handleRequest(req: Request): Promise<Response> {
-  const response = withPoweredBy(
+  const response = withMutableHeaders(
     await paraglideMiddleware(req, () => handler.fetch(req))
   );
   // First-touch attribution: remember UTM params for 30 days so sign-up can

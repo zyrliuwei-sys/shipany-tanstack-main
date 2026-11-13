@@ -3,7 +3,6 @@ import type { ComponentType, ReactNode, SVGProps } from 'react';
 import { Link } from '@/core/i18n/navigation';
 import { envConfigs } from '@/config';
 import { cn } from '@/lib/utils';
-import { BuiltWithShipAny } from '@/components/built-with-shipany';
 import { LocaleSelector } from '@/components/locale-selector';
 
 export interface FooterColumn {
@@ -35,15 +34,12 @@ export function SiteFooter({
   socials,
   copyright,
   badges,
-  builtWith = false,
 }: {
   tagline?: string;
   columns?: FooterColumn[];
   socials?: FooterSocial[];
   copyright?: string;
   badges?: ReactNode;
-  /** Optional "Built with ShipAny" attribution; hidden by default. */
-  builtWith?: 'pill' | 'text' | false;
 }) {
   const year = new Date().getFullYear();
 
@@ -139,12 +135,6 @@ export function SiteFooter({
 
         {/* Bottom bar */}
         <div className="mt-6 flex flex-col gap-3 border-t border-neutral-800 pt-5 sm:flex-row sm:items-center sm:justify-between">
-          {builtWith && (
-            <BuiltWithShipAny
-              variant={builtWith}
-              className="text-neutral-200"
-            />
-          )}
           <span className="text-sm text-neutral-400 sm:ml-auto">
             {copyright ||
               `© ${year} ${envConfigs.app_name}. All rights reserved.`}

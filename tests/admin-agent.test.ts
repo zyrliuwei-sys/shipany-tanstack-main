@@ -970,6 +970,13 @@ test('skill client manages several projects in a private store and never prints 
     ...process.env,
     SHIPANY_ADMIN_CONFIG: configFile,
   };
+  for (const key of [
+    'SITE_ADMIN_CONFIG',
+    'SITE_ADMIN_URL',
+    'SITE_ADMIN_TOKEN',
+    'SITE_ADMIN_PROJECT',
+  ])
+    delete env[key];
   delete env.SHIPANY_ADMIN_URL;
   delete env.SHIPANY_ADMIN_TOKEN;
   delete env.SHIPANY_ADMIN_PROJECT;
@@ -1007,6 +1014,23 @@ test('skill client manages several projects in a private store and never prints 
     env: { ...env, SHIPANY_ADMIN_URL: baseUrl, SHIPANY_ADMIN_TOKEN: readToken },
   });
   assert.equal(viaEnv.token, readToken);
+  const modernEnv = {
+    ...env,
+    SITE_ADMIN_CONFIG: configFile,
+    SITE_ADMIN_URL: baseUrl,
+    SITE_ADMIN_TOKEN: fullToken,
+  };
+  assert.equal(
+    (await client.resolveConnection({ env: modernEnv })).token,
+    fullToken
+  );
+  assert.equal(client.storePath(modernEnv), configFile);
+  await assert.rejects(
+    client.resolveConnection({
+      env: { SITE_ADMIN_URL: baseUrl, SHIPANY_ADMIN_TOKEN: readToken },
+    }),
+    /SITE_ADMIN_URL and SITE_ADMIN_TOKEN/
+  );
   // CLI: key on stdin, masked everywhere in output. Spawned asynchronously:
   // the API server runs in this process and must keep serving meanwhile.
   const run = (args: string[], input?: string) =>

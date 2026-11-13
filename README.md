@@ -1,4 +1,4 @@
-# ShipAny TanStack
+# Application
 
 A headless SaaS engine for building AI-powered products with Claude Code, on
 TanStack Start. Pre-wired business logic (payments, credits, subscriptions,
@@ -149,5 +149,3 @@ See [.env.example](./.env.example) for the full list.
 ## License
 
 This is proprietary software. See [LICENSE](./LICENSE) for the full license agreement.
-
-**ShipAny** — [shipany.ai](https://shipany.ai)

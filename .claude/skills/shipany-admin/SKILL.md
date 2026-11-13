@@ -1,15 +1,15 @@
 ---
-name: shipany-admin
-description: Operate a ShipAny site's administration API or MCP tools to manage users, credits, orders, database posts, categories, roles, invites, tickets, and settings. Use when the user asks to perform an administrative task on a configured ShipAny site, not for changing application source code.
+name: site-admin
+description: Operate a site's administration API or MCP tools to manage users, credits, orders, database posts, categories, roles, invites, tickets, and settings. Use when the user asks to perform an administrative task on a configured site, not for changing application source code.
 ---
 
-# ShipAny administration
+# Site administration
 
 Use the site's MCP tools when connected. Otherwise use the bundled Node 20+ client; it has no package dependencies and can be copied with this skill.
 
 ## Projects and credentials
 
-You may manage several ShipAny sites. Each is a named **project** (URL + admin key) saved by the bundled client in `~/.shipany/admin-projects.json` (mode 0600, override with `SHIPANY_ADMIN_CONFIG`). `SHIPANY_ADMIN_URL` + `SHIPANY_ADMIN_TOKEN` in the environment still work for a single site.
+You may manage several sites. Each is a named **project** (URL + admin key) saved by the bundled client in `~/.site-admin/projects.json` (mode 0600, override with `SITE_ADMIN_CONFIG`). `SITE_ADMIN_URL` + `SITE_ADMIN_TOKEN` in the environment still work for a single site.
 
 - **Adding a project** — when the user gives you a site URL and an admin key (`sa_admin_…`), save it immediately by piping the key on stdin, never as a command argument: `printf '%s' '<key>' | node <skill-dir>/scripts/admin-client.mjs add <name> <url>`. Use a short name from the site (e.g. `myshop`), or the one the user asked for. The client verifies the key against the site before saving. Afterwards never repeat, print or quote the key — refer to the project by name. Don't write keys anywhere else (repository, notes, memory files, input JSON).
 - **Choosing a project** — pass `--project <name>` on every call when more than one project exists (`projects` lists them, tokens masked). If the user's request doesn't make the target site unambiguous, ask before any write. Never carry an ID from one project into another.

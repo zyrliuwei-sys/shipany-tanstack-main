@@ -17,7 +17,7 @@ serveStdio(
     );
     if (catalog.status !== 200 || catalog.result.code !== 0)
       throw new Error('Cannot discover admin operations; check credentials.');
-    const server = new McpServer({ name: 'shipany-admin', version: '1.0.0' });
+    const server = new McpServer({ name: 'site-admin', version: '1.0.0' });
     for (const operation of catalog.result.data) {
       server.registerTool(
         operation.name,

@@ -144,7 +144,7 @@ export async function submitUrls(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json; charset=utf-8',
-          'User-Agent': `ShipAny-IndexNow (+${siteOrigin()})`,
+          'User-Agent': `IndexNowClient (+${siteOrigin()})`,
         },
         body,
         redirect: 'error',

@@ -293,7 +293,7 @@ export class WechatPayProvider implements PaymentProvider {
         Authorization: authorization,
         // Required by WeChat Pay v3 ("Http头缺少Accept或User-Agent" otherwise);
         // Cloudflare Workers' fetch doesn't send one by default.
-        'User-Agent': 'ShipAny-WechatPay/1.0',
+        'User-Agent': 'WeChatPayClient/1.0',
       },
       body: body ? bodyStr : undefined,
     });

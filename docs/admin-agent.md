@@ -20,7 +20,7 @@ pnpm admin:token agents
 pnpm admin:token revoke --id=KEY_ID
 ```
 
-The output file must not exist; it is created with mode 0600 and the key is never printed. Put the key in your agent's secret store/environment as `SHIPANY_ADMIN_TOKEN`; use `SHIPANY_ADMIN_URL=https://your-site.example` for the site. These are client-side process variables, not `VITE_` variables or application provider settings. Do not put credentials in the repository. Expiry is 1–365 days, or `--days=never` (still revocable; give such agents minimal roles).
+The output file must not exist; it is created with mode 0600 and the key is never printed. Put the key in your agent's secret store/environment as `SITE_ADMIN_TOKEN`; use `SITE_ADMIN_URL=https://your-site.example` for the site. These are client-side process variables, not `VITE_` variables or application provider settings. Do not put credentials in the repository. Expiry is 1–365 days, or `--days=never` (still revocable; give such agents minimal roles).
 
 The panel uses `/api/admin/agent/accounts` (GET list, POST `{ name, roleIds }`, PATCH `{ id, name?, roleIds? }`, DELETE `?id=`) and `/api/admin/agent/keys` (POST `{ agentId, name, expiresAt }` with an ISO timestamp within 365 days or `null`; DELETE `?id=`). Both require a same-origin `admin.*` browser session — an agent key can never mint or manage keys.
 
@@ -72,7 +72,7 @@ Pass `from`/`to` as ISO timestamps **with the reporting timezone's offset** — 
 
 ```sh
 curl -s "https://your-site.example/api/admin/analytics/report?from=2026-10-10T00:00:00%2B08:00&to=2026-10-11T00:00:00%2B08:00" \
-  -H "Authorization: Bearer $SHIPANY_ADMIN_TOKEN"
+  -H "Authorization: Bearer $SITE_ADMIN_TOKEN"
 ```
 
 Over MCP, call the `analytics_report` tool with `{ "input": { "from": "...", "to": "..." } }`. Give the reporting agent a read-only role.
@@ -92,11 +92,11 @@ For stdio, launch from this checkout:
 ```json
 {
   "mcpServers": {
-    "shipany-admin": {
+    "site-admin": {
       "command": "pnpm",
       "args": [
         "--dir",
-        "/absolute/path/to/shipany-tanstack",
+        "/absolute/path/to/application",
         "--silent",
         "admin:mcp"
       ]
@@ -105,7 +105,7 @@ For stdio, launch from this checkout:
 }
 ```
 
-Supply `SHIPANY_ADMIN_URL` and `SHIPANY_ADMIN_TOKEN` through your client's environment/secret mechanism. The bridge fetches tool definitions from the configured site and reauthenticates through the API for every call; restarting refreshes the advertised tool list after the agent's roles change. No logs or env-loader banners are written to its MCP stdout.
+Supply `SITE_ADMIN_URL` and `SITE_ADMIN_TOKEN` through your client's environment/secret mechanism. The bridge fetches tool definitions from the configured site and reauthenticates through the API for every call; restarting refreshes the advertised tool list after the agent's roles change. No logs or env-loader banners are written to its MCP stdout.
 
 Each tool accepts:
 
@@ -120,25 +120,25 @@ Read tools require only `input` (use `{}` when no filters are needed). Failures 
 
 ## Skill and standalone CLI
 
-The repository skill is `.claude/skills/shipany-admin/SKILL.md`, available through the existing cross-agent skill symlinks. Copy the entire `shipany-admin` folder into another agent's skill library to use it independently. A deployed site also serves both files publicly (no secrets in them) at `/api/admin/agent/skill?file=SKILL.md` and `/api/admin/agent/skill?file=admin-client.mjs` (query, not path: the Vite dev server would treat a path ending in `.md`/`.mjs` as a static file); the Skill tab on `/admin/agent` gives a ready-to-paste prompt that has the agent download them and read its key from `SHIPANY_ADMIN_TOKEN`. Files under `.claude/` are excluded from MDX compilation (`vite.config.ts`) so they're served verbatim. Its `scripts/admin-client.mjs` needs Node 20+ and no dependencies:
+Download the `site-admin` skill from your deployed site. Both files are public and contain no secrets: `/api/admin/agent/skill?file=SKILL.md` and `/api/admin/agent/skill?file=admin-client.mjs`. Save them as `<skill-dir>/site-admin/SKILL.md` and `<skill-dir>/site-admin/scripts/admin-client.mjs` in your agent's skill library. The Skill tab on `/admin/agent` provides a ready-to-paste setup prompt. Store the key in the private project store or pass it through `SITE_ADMIN_TOKEN`. The client needs Node 20+ and no dependencies:
 
 ```sh
-node .claude/skills/shipany-admin/scripts/admin-client.mjs list
-node .claude/skills/shipany-admin/scripts/admin-client.mjs openapi
-node .claude/skills/shipany-admin/scripts/admin-client.mjs call users_list /tmp/input.json
+node <skill-dir>/site-admin/scripts/admin-client.mjs list
+node <skill-dir>/site-admin/scripts/admin-client.mjs openapi
+node <skill-dir>/site-admin/scripts/admin-client.mjs call users_list /tmp/input.json
 ```
 
-**Several sites.** The client keeps named projects (URL + admin key) in `~/.shipany/admin-projects.json` (mode 0600; `SHIPANY_ADMIN_CONFIG` overrides the path). Keys are read from stdin and verified against the site before saving, and are never printed (`projects` masks them):
+**Several sites.** The client keeps named projects (URL + admin key) in `~/.site-admin/projects.json` (mode 0600; `SITE_ADMIN_CONFIG` overrides the path). Keys are read from stdin and verified against the site before saving, and are never printed (`projects` masks them):
 
 ```sh
-printf '%s' "$KEY" | node .claude/skills/shipany-admin/scripts/admin-client.mjs add myshop https://myshop.example
-node .claude/skills/shipany-admin/scripts/admin-client.mjs projects
-node .claude/skills/shipany-admin/scripts/admin-client.mjs --project myshop call analytics_report /tmp/input.json
-node .claude/skills/shipany-admin/scripts/admin-client.mjs use myshop      # default project
-node .claude/skills/shipany-admin/scripts/admin-client.mjs remove myshop
+printf '%s' "$KEY" | node <skill-dir>/site-admin/scripts/admin-client.mjs add myshop https://myshop.example
+node <skill-dir>/site-admin/scripts/admin-client.mjs projects
+node <skill-dir>/site-admin/scripts/admin-client.mjs --project myshop call analytics_report /tmp/input.json
+node <skill-dir>/site-admin/scripts/admin-client.mjs use myshop      # default project
+node <skill-dir>/site-admin/scripts/admin-client.mjs remove myshop
 ```
 
-Resolution order: `--project`, `SHIPANY_ADMIN_PROJECT`, the `SHIPANY_ADMIN_URL`/`SHIPANY_ADMIN_TOKEN` pair, then the default (or only) project. The Skill prompt on each site's `/admin/agent` page names the project after the site, so pasting it on several sites builds up the list; MCP snippets likewise use a per-site server name.
+Resolution order: `--project`, `SITE_ADMIN_PROJECT`, the `SITE_ADMIN_URL`/`SITE_ADMIN_TOKEN` pair, then the default (or only) project. The Skill prompt on each site's `/admin/agent` page names the project after the site, so pasting it on several sites builds up the list; MCP snippets likewise use a per-site server name.
 
 Use JSON files or stdin (`-`) for inputs; do not put secrets in command arguments. The client refuses credential-bearing redirects and non-HTTPS remote URLs (localhost HTTP is allowed).
 
