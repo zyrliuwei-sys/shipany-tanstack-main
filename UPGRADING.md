@@ -46,6 +46,65 @@ exports, permission codes, and behavior that changes for end users.
 
 ---
 
+## 2026-11-13: English-only product
+
+Only `en` is enabled in `project.inlang/settings.json`. Chinese catalogs and
+Chinese MDX pages/posts are removed. Public and dashboard language selectors
+hide automatically with a single enabled locale. Locale cookies no longer
+choose the language, so an existing `PARAGLIDE_LOCALE=zh` cookie cannot bring
+the removed edition back. Generated metadata and sitemap entries contain
+only English.
+
+Take the locale configuration, Vite configuration, server entry,
+`src/lib/english-only.ts`, redirect helpers, UI changes and content removals
+together. The server permanently redirects `/zh` and `/zh/*` to their
+English equivalents, preserving query strings. Auth return URLs also drop
+the retired prefix safely. Rebuild to regenerate Paraglide, then redeploy.
+
+Bot notification templates are English-only as well. Existing
+`notify_language=zh` settings are ignored; no database migration is needed.
+The IndexNow installer now ships/synchronizes only the English catalog.
+New product copy belongs only in `messages/en.json`; do not recreate a
+second catalog when following older generic skill examples.
+
+## 2026-11-12: Portable Plausible trust and IndexNow installer repairs
+
+New projects trust `stats.cadcraft.org` as a Plausible script host through
+`src/config/analytics.ts`, alongside `plausible.io`. This explicit repository
+configuration travels with the template; a developer's ignored
+`.env.development` did not. Other script hosts still require the deployment
+environment allow-list, and HTTP, credentials and lookalike hosts remain
+rejected. Take the config, embed validation and settings help text together,
+then rebuild/redeploy existing projects to use this new default.
+
+IndexNow is already built in. Its key is read/written directly through its
+own module, bypassing neither permissions nor the public verification route.
+The older standalone installer wrote `indexnow_key` through `saveConfigs`,
+which newer templates deliberately refuse; it could report success without
+actually saving the key. The repaired bundle is maintained under
+`tools/indexnow-installer` and can upgrade an older installation with
+`node tools/indexnow-installer/install.mjs /path/to/project --force`.
+It backs up changed files, preserves unified admin operations where present,
+and uses dedicated permissions on older templates. Legacy encrypted key
+rows remain readable while the original `CONFIG_ENCRYPTION_KEY` is present.
+The status endpoint returns its permitted actions so older permission-summary
+APIs without individual codes still work; every action remains server-checked.
+
+The server's runtime `VITE_APP_URL` (Workers binding first) now determines
+IndexNow's host/keyLocation, sitemap entries and robots' sitemap URL, instead
+of a stale build-time localhost value. Take `src/lib/site-origin.ts` together
+with the IndexNow service, sitemap and robots routes. Keep `VITE_APP_URL`
+set to the actual public site in the deployment environment. Local/private
+origins still cannot submit externally. Key-file verification must pass
+before the UI enables submission, and a mismatched admin origin is reported.
+
+No new tables or permission codes are required. Existing projects need to
+deploy the updated files; changing this template does not update their
+running deployments. Run `pnpm test:indexnow`, the admin/guard tests and
+`pnpm build`. `tsconfig.json` excludes the installer's TypeScript payload
+from the host project's compilation; those files compile in their target
+project after installation.
+
 ## 2026-11-02: First-party operations dashboard
 
 `/admin/operations` adds same-time today/yesterday comparisons (UTC+08:00),

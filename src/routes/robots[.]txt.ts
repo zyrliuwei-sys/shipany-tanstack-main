@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-import { envConfigs } from '@/config';
+import { serverSiteOrigin } from '@/lib/site-origin';
 
 export const Route = createFileRoute('/robots.txt')({
   server: {
@@ -14,7 +14,7 @@ export const Route = createFileRoute('/robots.txt')({
           'Disallow: /api/',
           'Disallow: /*?*',
           '',
-          `Sitemap: ${envConfigs.app_url}/sitemap.xml`,
+          `Sitemap: ${serverSiteOrigin()}/sitemap.xml`,
           '',
         ].join('\n');
         return new Response(body, {

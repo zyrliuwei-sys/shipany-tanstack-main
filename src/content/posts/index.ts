@@ -121,10 +121,10 @@ export function mergePosts(
   return options.limit ? merged.slice(0, options.limit) : merged;
 }
 
-export function formatPostDate(dateIso: string, locale: string): string {
-  return new Intl.DateTimeFormat(locale === 'zh' ? 'zh-CN' : 'en-US', {
+export function formatPostDate(dateIso: string, _locale: string): string {
+  return new Intl.DateTimeFormat(baseLocale, {
     year: 'numeric',
-    month: locale === 'zh' ? 'long' : 'short',
+    month: 'short',
     day: 'numeric',
   }).format(new Date(dateIso));
 }

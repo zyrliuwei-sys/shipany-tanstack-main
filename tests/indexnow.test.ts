@@ -30,8 +30,15 @@ execFileSync(
 const { db } = await import('../src/core/db');
 const { config, user } = await import('../src/config/db/schema');
 const { envConfigs } = await import('../src/config');
-const { getIndexNowKey, saveIndexNowKey, submitUrls, normalizeIndexNowUrls } =
-  await import('../src/modules/indexnow/service');
+const { indexNowAccess } = await import('../src/lib/indexnow');
+const {
+  getIndexNowKey,
+  saveIndexNowKey,
+  submitUrls,
+  normalizeIndexNowUrls,
+  siteOrigin,
+  keyFileUrl,
+} = await import('../src/modules/indexnow/service');
 const { executeAdmin, findOperation, runAdminRoute } =
   await import('../src/server/admin/execute');
 const { getAdminConfigs, getCustomConfigs, saveConfigs, replaceCustomConfigs } =
@@ -69,6 +76,30 @@ after(async () => {
   await rm(directory, { recursive: true, force: true });
 });
 
+test('legacy permission summaries can load status without granting write access from isAdmin alone', () => {
+  const legacy = { isAdmin: true };
+  assert.deepEqual(indexNowAccess(legacy), {
+    canLoad: true,
+    canRead: false,
+    canWrite: false,
+    canSubmit: false,
+  });
+  assert.equal(indexNowAccess({ isAdmin: false }).canLoad, false);
+  const status = {
+    key,
+    keyFileUrl: `${origin}/${key}.txt`,
+    origin,
+    publicSite: true,
+    permissions: { read: true, write: false, submit: true },
+  };
+  assert.deepEqual(indexNowAccess(legacy, status), {
+    canLoad: true,
+    canRead: true,
+    canWrite: false,
+    canSubmit: true,
+  });
+});
+
 test('concurrent first saves produce one valid key row', async () => {
   assert.equal(await getIndexNowKey(), null);
   await Promise.all([
@@ -100,6 +131,35 @@ test('saving and rotating the key immediately changes the public verification ro
   await saveIndexNowKey('rotated-valid-key-12345');
   assert.equal((await keyHandler({ params: { key } })).status, 404);
   await saveIndexNowKey(key);
+});
+
+test('legacy encrypted keys remain verifiable after upgrading the installer', async () => {
+  const { encryptSecret } = await import('../src/lib/crypto');
+  const previous = process.env.CONFIG_ENCRYPTION_KEY;
+  try {
+    process.env.CONFIG_ENCRYPTION_KEY =
+      'isolated-indexnow-legacy-encryption-secret';
+    const encrypted = await encryptSecret(key);
+    assert.notEqual(encrypted, key);
+    await db()
+      .update(config)
+      .set({ value: encrypted })
+      .where(eq(config.name, 'indexnow_key'));
+    assert.equal(await getIndexNowKey(), key);
+    const file = await keyHandler({ params: { key } });
+    assert.equal(file.status, 200);
+    assert.equal(await file.text(), key);
+    delete process.env.CONFIG_ENCRYPTION_KEY;
+    assert.equal(
+      await getIndexNowKey(),
+      null,
+      'do not serve ciphertext when the old encryption key is missing'
+    );
+  } finally {
+    if (previous === undefined) delete process.env.CONFIG_ENCRYPTION_KEY;
+    else process.env.CONFIG_ENCRYPTION_KEY = previous;
+    await saveIndexNowKey(key);
+  }
 });
 
 test('IndexNow operations require their own permissions and protect against CSRF', async () => {
@@ -229,6 +289,7 @@ test('invalid ownership is reported without retrying on other engines', async (t
 
 test('local origins cannot submit to external search engines', async (t) => {
   const previous = envConfigs.app_url;
+  const previousRuntime = process.env.VITE_APP_URL;
   const fetchMock = t.mock.method(
     globalThis,
     'fetch',
@@ -236,6 +297,7 @@ test('local origins cannot submit to external search engines', async (t) => {
   );
   try {
     envConfigs.app_url = 'http://localhost:3002';
+    process.env.VITE_APP_URL = 'http://localhost:3002';
     await assert.rejects(
       submitUrls(key, ['http://localhost:3002/']),
       /public site/
@@ -243,6 +305,37 @@ test('local origins cannot submit to external search engines', async (t) => {
     assert.equal(fetchMock.mock.callCount(), 0);
   } finally {
     envConfigs.app_url = previous;
+    process.env.VITE_APP_URL = previousRuntime;
+  }
+});
+
+test('runtime deployment URL controls the key location and submissions even after a localhost build', async (t) => {
+  const previous = envConfigs.app_url;
+  const previousBindings = (globalThis as any).__CF_ENV__;
+  const publicOrigin = 'https://deployed.example.com';
+  const fetchMock = t.mock.method(
+    globalThis,
+    'fetch',
+    async (_url: RequestInfo | URL, options?: RequestInit) => {
+      const body = JSON.parse(String(options?.body));
+      assert.equal(body.host, 'deployed.example.com');
+      assert.equal(body.keyLocation, `${publicOrigin}/${key}.txt`);
+      assert.deepEqual(body.urlList, [`${publicOrigin}/page`]);
+      return new Response('', { status: 202 });
+    }
+  );
+  try {
+    envConfigs.app_url = 'http://localhost:3000';
+    (globalThis as any).__CF_ENV__ = { VITE_APP_URL: publicOrigin };
+    assert.equal(siteOrigin(), publicOrigin);
+    assert.equal(keyFileUrl(key), `${publicOrigin}/${key}.txt`);
+    const result = await submitUrls(key, [`${publicOrigin}/page`]);
+    assert.equal(result.results[0].ok, true);
+    assert.equal(fetchMock.mock.callCount(), 1);
+  } finally {
+    envConfigs.app_url = previous;
+    if (previousBindings === undefined) delete (globalThis as any).__CF_ENV__;
+    else (globalThis as any).__CF_ENV__ = previousBindings;
   }
 });
 

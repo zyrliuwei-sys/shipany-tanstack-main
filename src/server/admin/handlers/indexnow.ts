@@ -1,3 +1,4 @@
+import { matchPermission } from '@/core/auth/rbac';
 import {
   getIndexNowKey,
   IndexNowInputError,
@@ -12,13 +13,18 @@ import { respData, respErr } from '@/lib/resp';
 
 import type { AdminHandlerContext } from '../types';
 
-async function status() {
+async function status({ actor }: AdminHandlerContext) {
   const key = await getIndexNowKey();
   return {
     key,
     keyFileUrl: key ? keyFileUrl(key) : null,
     origin: siteOrigin(),
     publicSite: isPublicSite(),
+    permissions: {
+      read: matchPermission('admin.indexnow.read', actor.permissions),
+      write: matchPermission('admin.indexnow.write', actor.permissions),
+      submit: matchPermission('admin.indexnow.submit', actor.permissions),
+    },
   };
 }
 
@@ -33,7 +39,7 @@ function limit({ request, actor }: AdminHandlerContext) {
 export async function GET(context: AdminHandlerContext) {
   const limited = limit(context);
   if (limited) return limited;
-  return respData(await status());
+  return respData(await status(context));
 }
 
 export async function PUT(context: AdminHandlerContext) {
@@ -41,7 +47,7 @@ export async function PUT(context: AdminHandlerContext) {
   if (limited) return limited;
   const { key } = await context.request.json();
   await saveIndexNowKey(key);
-  return respData(await status());
+  return respData(await status(context));
 }
 
 export async function POST(context: AdminHandlerContext) {

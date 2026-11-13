@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router';
 
-import { envConfigs } from '@/config';
+import { serverSiteOrigin } from '@/lib/site-origin';
 import { baseLocale, locales, localizeUrl } from '@/paraglide/runtime.js';
 import { getLocalPosts, mergePosts } from '@/content/posts';
 
@@ -19,22 +19,22 @@ type Entry = {
   priority: number;
 };
 
-function urlFor(path: string, locale: string): string {
-  return localizeUrl(`${envConfigs.app_url}${path || '/'}`, {
+function urlFor(path: string, locale: string, origin: string): string {
+  return localizeUrl(`${origin}${path || '/'}`, {
     locale: locale as (typeof locales)[number],
   }).href;
 }
 
-function entryXml(e: Entry): string {
+function entryXml(e: Entry, origin: string): string {
   const alternates = locales
     .map(
       (loc) =>
-        `    <xhtml:link rel="alternate" hreflang="${loc}" href="${urlFor(e.path, loc)}"/>`
+        `    <xhtml:link rel="alternate" hreflang="${loc}" href="${urlFor(e.path, loc, origin)}"/>`
     )
     .join('\n');
   return [
     '  <url>',
-    `    <loc>${urlFor(e.path, baseLocale)}</loc>`,
+    `    <loc>${urlFor(e.path, baseLocale, origin)}</loc>`,
     alternates,
     e.lastModified ? `    <lastmod>${e.lastModified}</lastmod>` : null,
     `    <changefreq>${e.changeFrequency}</changefreq>`,
@@ -91,7 +91,7 @@ export const Route = createFileRoute('/sitemap.xml')({
         const xml = [
           '<?xml version="1.0" encoding="UTF-8"?>',
           '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
-          ...entries.map(entryXml),
+          ...entries.map((entry) => entryXml(entry, serverSiteOrigin())),
           '</urlset>',
           '',
         ].join('\n');

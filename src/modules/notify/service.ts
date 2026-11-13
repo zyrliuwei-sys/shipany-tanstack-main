@@ -54,12 +54,6 @@ const INTERVAL_LABELS: Record<
   NotifyLanguage,
   Record<IntervalUnit, { single: string; unit: string }>
 > = {
-  zh: {
-    day: { single: '日付', unit: '天' },
-    week: { single: '周付', unit: '周' },
-    month: { single: '月付', unit: '个月' },
-    year: { single: '年付', unit: '年' },
-  },
   en: {
     day: { single: 'Daily', unit: 'days' },
     week: { single: 'Weekly', unit: 'weeks' },
@@ -71,14 +65,8 @@ const INTERVAL_LABELS: Record<
 function formatChargeType(
   kind: 'first' | 'renew' | 'one-time',
   chargeIndex: number | undefined,
-  language: NotifyLanguage
+  _language: NotifyLanguage
 ) {
-  if (language === 'zh') {
-    if (kind === 'first') return '订阅首次扣费';
-    if (kind === 'renew')
-      return chargeIndex ? `订阅续费（第 ${chargeIndex} 次扣费）` : '订阅续费';
-    return '一次性付费';
-  }
   if (kind === 'first') return 'First subscription charge';
   if (kind === 'renew')
     return chargeIndex
@@ -96,9 +84,7 @@ function formatBillingCycle(
   if (!labels) return '';
   const count = intervalCount && intervalCount > 1 ? intervalCount : 1;
   if (count === 1) return labels.single;
-  return language === 'zh'
-    ? `每 ${count} ${labels.unit}`
-    : `Every ${count} ${labels.unit}`;
+  return `Every ${count} ${labels.unit}`;
 }
 
 // Currencies whose smallest unit is the whole unit (amounts aren't in cents).
@@ -211,7 +197,7 @@ function formatTime(date: Date | null | undefined, timeZone: string) {
 function formatCountry(code: string, language: NotifyLanguage) {
   if (!code) return '';
   try {
-    const name = new Intl.DisplayNames([language === 'zh' ? 'zh-CN' : 'en'], {
+    const name = new Intl.DisplayNames([language], {
       type: 'region',
     }).of(code);
     return name && name !== code ? `${name} (${code})` : code;
@@ -469,8 +455,7 @@ export async function sendTestPaymentNotification(
     },
     configs,
   });
-  const language = normalizeNotifyLanguage(configs.notify_language);
-  const prefix = language === 'zh' ? '[测试] ' : '[Test] ';
+  const prefix = '[Test] ';
   return sendToChannels(
     channels,
     prefix + renderPaymentMessage(vars, configs),
@@ -492,7 +477,6 @@ const TICKET_EVENT_LABELS: Record<
   NotifyLanguage,
   Record<TicketEvent, string>
 > = {
-  zh: { created: '新工单', replied: '工单新回复' },
   en: { created: 'New ticket', replied: 'New ticket reply' },
 };
 
@@ -727,14 +711,11 @@ export async function sendTestGuestPostNotification(
     throw new Error('No notification channel is configured');
   }
   const now = new Date();
-  const zh = normalizeNotifyLanguage(configs.notify_language) === 'zh';
   const vars = buildGuestPostVars({
     event: 'submitted',
     guestPost: {
       id: 'TEST-GUEST-POST',
-      title: zh
-        ? '10 个提升 SaaS 转化率的方法'
-        : '10 ways to lift SaaS conversion',
+      title: '10 ways to lift SaaS conversion',
       slug: 'test-guest-post',
       packageName: 'Premium',
       submittedAt: now,
@@ -751,8 +732,7 @@ export async function sendTestGuestPostNotification(
   const language = normalizeNotifyLanguage(configs.notify_language);
   return sendToChannels(
     channels,
-    (zh ? '[测试] ' : '[Test] ') +
-      renderTemplate(GUEST_POST_TEMPLATES[language], vars),
+    '[Test] ' + renderTemplate(GUEST_POST_TEMPLATES[language], vars),
     {
       event: 'guest_post.submitted',
       data: { guest_post_id: 'TEST-GUEST-POST', ...vars },
@@ -771,16 +751,14 @@ export async function sendTestTicketNotification(
   }
 
   const now = new Date();
-  const zh = normalizeNotifyLanguage(configs.notify_language) === 'zh';
   const vars = buildTicketVars({
     ticket: {
       id: 'TEST-TICKET',
-      title: zh ? '积分没有到账' : 'Credits not added after payment',
+      title: 'Credits not added after payment',
       createdAt: now,
     },
-    content: zh
-      ? '我刚刚购买了 Pro 套餐，但是积分一直没有到账，请帮忙看一下。'
-      : 'I just bought the Pro plan but my credits never showed up. Could you take a look?',
+    content:
+      'I just bought the Pro plan but my credits never showed up. Could you take a look?',
     attachments: 1,
     user: {
       name: 'Test User',
@@ -792,7 +770,7 @@ export async function sendTestTicketNotification(
   });
   return sendToChannels(
     channels,
-    (zh ? '[测试] ' : '[Test] ') + renderTicketMessage(vars, configs),
+    '[Test] ' + renderTicketMessage(vars, configs),
     {
       event: 'ticket.created',
       data: { ticket_id: 'TEST-TICKET', ...vars },

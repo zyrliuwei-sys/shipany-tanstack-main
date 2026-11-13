@@ -1,3 +1,5 @@
+import { TRUSTED_PLAUSIBLE_SCRIPT_HOSTS } from '@/config/analytics';
+
 /**
  * Formats for third-party IDs that admin settings feed into inline <script>
  * tags / script URLs (analytics, ads, customer-service widgets). Anything that
@@ -16,7 +18,8 @@ const EMBED_ID_PATTERNS: Record<string, RegExp> = {
  * Hosts allowed to serve the Plausible script. A script URL runs with the
  * site's full authority (including in admins' browsers), so "any https URL"
  * would let anyone with settings.write load their own JS. Self-hosted
- * Plausible is opted into by deployment config, never by a settings value:
+ * Plausible is opted into by src/config/analytics.ts or deployment config,
+ * never by a settings value:
  * PLAUSIBLE_SCRIPT_HOSTS=stats.example.com,plausible.example.org
  *
  * Read at runtime on the server (process.env, or the Workers env), so a
@@ -40,7 +43,7 @@ export function plausibleScriptHosts(): string[] {
     .filter((v) => typeof v === 'string')
     .join(',');
   return [
-    'plausible.io',
+    ...TRUSTED_PLAUSIBLE_SCRIPT_HOSTS,
     ...raw
       .split(',')
       .map((h) => h.trim().toLowerCase())

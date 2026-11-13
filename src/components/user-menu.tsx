@@ -141,23 +141,27 @@ export function UserMenu({
                 {m['common.nav.profile']()}
               </DropdownMenuItem>
             )}
-            <DropdownMenuSub>
-              <DropdownMenuSubTrigger className="gap-2 px-2 py-2">
-                <LanguagesIcon className="size-4" />
-                <span className="flex-1">{localeNames[locale] || locale}</span>
-              </DropdownMenuSubTrigger>
-              <DropdownMenuSubContent>
-                {locales.map((loc) => (
-                  <DropdownMenuItem
-                    key={loc}
-                    onClick={() => handleLocaleSwitch(loc)}
-                  >
-                    <span className="flex-1">{localeNames[loc] || loc}</span>
-                    {loc === locale && <CheckIcon className="size-3.5" />}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuSubContent>
-            </DropdownMenuSub>
+            {locales.length > 1 && (
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="gap-2 px-2 py-2">
+                  <LanguagesIcon className="size-4" />
+                  <span className="flex-1">
+                    {localeNames[locale] || locale}
+                  </span>
+                </DropdownMenuSubTrigger>
+                <DropdownMenuSubContent>
+                  {locales.map((loc) => (
+                    <DropdownMenuItem
+                      key={loc}
+                      onClick={() => handleLocaleSwitch(loc)}
+                    >
+                      <span className="flex-1">{localeNames[loc] || loc}</span>
+                      {loc === locale && <CheckIcon className="size-3.5" />}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuSubContent>
+              </DropdownMenuSub>
+            )}
             {!colorModeForced && (
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger className="gap-2 px-2 py-2">

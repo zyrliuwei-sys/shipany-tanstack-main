@@ -1,10 +1,30 @@
-import { apiGetText } from '@/lib/api-client';
 import { INDEXNOW_KEY_PATTERN, MAX_INDEXNOW_URLS } from '@/lib/indexnow';
 
+// These resources return XML/plain text, not the JSON API envelope.
+async function readText(path: string) {
+  const response = await fetch(path, {
+    cache: 'no-store',
+    signal: AbortSignal.timeout(15_000),
+  });
+  return {
+    ok: response.ok,
+    status: response.status,
+    text: await response.text(),
+  };
+}
+
 /** Read via the browser: Workers cannot fetch their own custom domain. */
-export async function checkIndexNowKeyFile(key: string) {
+export async function checkIndexNowKeyFile(key: string, origin?: string) {
   if (!INDEXNOW_KEY_PATTERN.test(key)) throw new Error('Invalid IndexNow key');
-  const response = await apiGetText(`/${key}.txt`);
+  if (
+    origin &&
+    typeof window !== 'undefined' &&
+    new URL(origin).origin !== window.location.origin
+  )
+    throw new Error(
+      `Open ${new URL('/admin/indexnow', origin).href} to verify this site's key file`
+    );
+  const response = await readText(`/${key}.txt`);
   return {
     ok: response.ok && response.text.trim() === key,
     status: response.status,
@@ -14,6 +34,13 @@ export async function checkIndexNowKeyFile(key: string) {
 /** Follow bounded, same-site sitemap indexes; preserve localized URLs and queries. */
 export async function readIndexNowSitemap(origin: string): Promise<string[]> {
   const expectedOrigin = new URL(origin).origin;
+  if (
+    typeof window !== 'undefined' &&
+    expectedOrigin !== window.location.origin
+  )
+    throw new Error(
+      `Open ${new URL('/admin/indexnow', origin).href} to submit this site's sitemap`
+    );
   const visited = new Set<string>();
   const urls = new Set<string>();
 
@@ -22,7 +49,7 @@ export async function readIndexNowSitemap(origin: string): Promise<string[]> {
     if (depth > 3 || visited.size >= 20)
       throw new Error('Sitemap index is too large');
     visited.add(path);
-    const response = await apiGetText(path);
+    const response = await readText(path);
     if (!response.ok)
       throw new Error(`Sitemap returned HTTP ${response.status}`);
     const doc = new DOMParser().parseFromString(

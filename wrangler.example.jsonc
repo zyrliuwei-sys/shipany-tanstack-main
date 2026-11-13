@@ -20,7 +20,8 @@
     // sync with .env.production (better-auth trustedOrigins, payment callbacks).
     "VITE_APP_URL": "https://<worker>.<your-subdomain>.workers.dev",
     "VITE_APP_NAME": "My App",
-    // Self-hosted Plausible script host(s), comma-separated. Optional.
+    // Extra Plausible script hosts, comma-separated. Optional:
+    // plausible.io and stats.cadcraft.org are already trusted by the template.
     // "PLAUSIBLE_SCRIPT_HOSTS": "stats.example.com",
   },
   "d1_databases": [

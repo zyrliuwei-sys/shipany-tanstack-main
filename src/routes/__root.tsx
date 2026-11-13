@@ -61,7 +61,7 @@ const getAnalyticsConfigs = createServerFn().handler(async () => {
     getAllConfigs(),
     getStoredFooterBadges(),
   ]);
-  // Host allow-list (PLAUSIBLE_SCRIPT_HOSTS) is runtime server env. A
+  // Hosts come from the template trust list and runtime PLAUSIBLE_SCRIPT_HOSTS. A
   // configured src that fails it turns Plausible off rather than falling
   // back to the plausible.io script.
   const rawPlausibleSrc = configs.plausible_src?.trim() || '';

@@ -34,7 +34,7 @@ payments, login providers, email, storage and AI at `/admin/settings`.
 - **API keys & invite codes** — Key CRUD + validation; trial invite codes with batch generation
 - **CMS & blog** — Categories and posts, Markdown blog, MDX static pages
 - **Bot notifications** — Telegram / Feishu / WeCom messages for payments, tickets and guest posts
-- **i18n** — English + Chinese via Paraglide JS, locale-aware routing (`/zh` prefix)
+- **i18n** — English-only UI and content via Paraglide JS; legacy `/zh` links redirect to English
 - **Appearance** — Optional admin-controlled color themes, font, size, sidebar layout and light/dark
 - **Database** — SQLite, PostgreSQL, MySQL, Turso and Cloudflare D1 via Drizzle ORM
 - **Deploy anywhere** — Node server, or Cloudflare Workers with D1 or Postgres via Hyperdrive
@@ -55,7 +55,7 @@ src/
 ├── core/           # Infrastructure (db, auth, payment, email, storage, ai, notify, i18n)
 ├── modules/        # Business logic (payment, credits, subscriptions, guest-posts, apikeys, rbac, ...)
 ├── config/         # Env, DB schema templates, pricing catalog, feature defaults
-├── routes/         # File-based routes (locale-free paths; /zh prefix via router rewrite)
+├── routes/         # File-based routes (English-only, locale-free paths)
 │   ├── settings/   # User center
 │   ├── admin/      # Admin panel
 │   └── api/        # Server routes (REST endpoints)
@@ -66,7 +66,7 @@ src/
 ├── hooks/          # Shared react-query hooks
 └── lib/            # Utilities (api-client, query-client, hash, resp, rate-limit, ...)
 
-messages/{en,zh}.json    # Translation source (flat dot-keyed)
+messages/en.json    # Translation source (flat dot-keyed)
 project.inlang/          # Inlang project config
 src/paraglide/           # Compiled messages + runtime (gitignored, generated)
 ```

@@ -17,6 +17,7 @@ export function LocaleSelector({
   variant?: 'icon' | 'pill';
   className?: string;
 }) {
+  if (locales.length < 2) return null;
   const locale = getLocale();
 
   function handleSwitch(newLocale: string) {

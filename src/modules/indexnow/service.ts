@@ -2,13 +2,14 @@
 import { eq } from 'drizzle-orm';
 
 import { db } from '@/core/db';
-import { envConfigs } from '@/config';
 import { config } from '@/config/db/schema';
+import { decryptSecret } from '@/lib/crypto';
 import {
   INDEXNOW_KEY_PATTERN,
   MAX_INDEXNOW_URLS,
   type IndexNowSubmitResult,
 } from '@/lib/indexnow';
+import { serverSiteOrigin } from '@/lib/site-origin';
 
 export const INDEXNOW_CONFIG_KEY = 'indexnow_key';
 export const INDEXNOW_ENDPOINTS = [
@@ -32,7 +33,9 @@ export async function getIndexNowKey(): Promise<string | null> {
     .from(config)
     .where(eq(config.name, INDEXNOW_CONFIG_KEY))
     .limit(1);
-  const key = row?.value?.trim();
+  // The legacy installer stored this through the generic secret-settings
+  // service. Preserve encrypted keys while bypassing its stale config cache.
+  const key = row?.value ? (await decryptSecret(row.value))?.trim() : null;
   return key && isValidIndexNowKey(key) ? key : null;
 }
 
@@ -48,7 +51,7 @@ export async function saveIndexNowKey(input: string): Promise<void> {
 }
 
 export function siteOrigin() {
-  return new URL(envConfigs.app_url).origin;
+  return serverSiteOrigin();
 }
 
 export function isPublicSite() {
@@ -139,7 +142,10 @@ export async function submitUrls(
     try {
       const response = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'User-Agent': `ShipAny-IndexNow (+${siteOrigin()})`,
+        },
         body,
         redirect: 'error',
         signal: AbortSignal.timeout(10_000),

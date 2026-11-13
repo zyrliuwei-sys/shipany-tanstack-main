@@ -109,11 +109,11 @@ test('paying sends "awaiting review" with package, amount and links (on by defau
   assert.equal(msgs.length, 1, 'one guest post message');
   const { text, data } = msgs[0];
   // Site name in the title, so one bot can serve several sites.
-  assert.match(text, /^【.+】新投稿待审核/);
-  assert.doesNotMatch(text, /产品：/);
-  assert.match(text, /标题：截图工具评测/);
-  assert.match(text, /套餐：Premium（\$199\.00）/);
-  assert.match(text, /作者：Jane <jane@example\.test>/);
+  assert.match(text, /^\[.+\] Guest post awaiting review/);
+  assert.doesNotMatch(text, /产品：|新投稿待审核/);
+  assert.match(text, /Title: 截图工具评测/);
+  assert.match(text, /Package: Premium \(\$199\.00\)/);
+  assert.match(text, /Author: Jane <jane@example\.test>/);
   assert.equal(
     data.preview_url,
     'http://localhost:3000/blog/screenshot-review?preview=1'
@@ -130,7 +130,7 @@ test('a resubmission says so', async () => {
   await notify.notifyGuestPostSubmitted(id, 'resubmitted');
   assert.equal(received.length, 1);
   assert.equal(received[0].event, 'guest_post.resubmitted');
-  assert.match(received[0].text, /】投稿重新提交/);
+  assert.match(received[0].text, /\] Guest post resubmitted/);
 });
 
 test('turning the switch off stops it', async () => {

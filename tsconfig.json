@@ -19,5 +19,12 @@
     }
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", ".output", ".nitro", ".tanstack"]
+  "exclude": [
+    "node_modules",
+    ".output",
+    ".nitro",
+    ".tanstack",
+    "tools/indexnow-installer/files",
+    "tools/indexnow-installer/adapters"
+  ]
 }

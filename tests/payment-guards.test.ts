@@ -258,6 +258,21 @@ test('the admin order edit can only close unpaid orders', async () => {
 
 test('the Plausible script must come from plausible.io or a deployment-listed host', () => {
   assert.equal(
+    isValidEmbedSetting(
+      'plausible_src',
+      'https://stats.cadcraft.org/js/pa-site.js'
+    ),
+    true
+  );
+  for (const value of [
+    'https://stats.cadcraft.org.evil.example/js/script.js',
+    'https://evil.stats.cadcraft.org/js/script.js',
+    'http://stats.cadcraft.org/js/script.js',
+    'https://user:password@stats.cadcraft.org/js/script.js',
+  ]) {
+    assert.equal(isValidEmbedSetting('plausible_src', value), false, value);
+  }
+  assert.equal(
     isValidEmbedSetting('plausible_src', 'https://plausible.io/js/pa-abc.js'),
     true
   );

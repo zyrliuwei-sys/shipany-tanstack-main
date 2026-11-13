@@ -6,10 +6,10 @@ import { CheckCircle2, ExternalLink, Loader2, XCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
-import { matchPermission } from '@/core/auth/rbac';
 import { apiGet, apiPost, apiPut } from '@/lib/api-client';
 import {
   INDEXNOW_KEY_PATTERN,
+  indexNowAccess,
   type IndexNowStatus,
   type IndexNowSubmitResult,
 } from '@/lib/indexnow';
@@ -34,10 +34,7 @@ const QUERY_KEY = ['admin-indexnow'];
 
 function IndexNowPage() {
   const permissions = useUserPermissions();
-  const codes = permissions.data?.permissions ?? [];
-  const canRead = matchPermission('admin.indexnow.read', codes);
-  const canWrite = matchPermission('admin.indexnow.write', codes);
-  const canSubmit = matchPermission('admin.indexnow.submit', codes);
+  const { canLoad } = indexNowAccess(permissions.data);
   const queryClient = useQueryClient();
   const [urls, setUrls] = useState('');
   const [result, setResult] = useState<IndexNowSubmitResult | null>(null);
@@ -45,14 +42,18 @@ function IndexNowPage() {
   const statusQuery = useQuery({
     queryKey: QUERY_KEY,
     queryFn: () => apiGet<IndexNowStatus>('/api/admin/indexnow'),
-    enabled: canRead,
+    enabled: canLoad,
   });
   const status = statusQuery.data;
+  const { canRead, canWrite, canSubmit } = indexNowAccess(
+    permissions.data,
+    status
+  );
 
   const keyFileQuery = useQuery({
-    queryKey: [...QUERY_KEY, 'key-file', status?.key],
-    queryFn: () => checkIndexNowKeyFile(status!.key!),
-    enabled: !!status?.key,
+    queryKey: [...QUERY_KEY, 'key-file', status?.key, status?.origin],
+    queryFn: () => checkIndexNowKeyFile(status!.key!, status!.origin),
+    enabled: canRead && !!status?.key,
   });
 
   const saveKey = useMutation({
@@ -112,7 +113,7 @@ function IndexNowPage() {
 
   if (permissions.isPending)
     return <Loader2 className="m-6 size-5 animate-spin" />;
-  if (!canRead)
+  if (!canLoad)
     return (
       <p role="alert" className="text-muted-foreground p-6">
         {m['admin.indexnow.forbidden']()}
@@ -121,12 +122,17 @@ function IndexNowPage() {
   if (statusQuery.isError)
     return (
       <div role="alert" className="space-y-3 p-6">
-        <p className="text-destructive">{m['admin.indexnow.load_error']()}</p>
+        <p className="text-destructive">
+          {m['admin.indexnow.load_error']()} {statusQuery.error.message}
+        </p>
         <Button variant="outline" onClick={() => statusQuery.refetch()}>
           {m['admin.indexnow.recheck']()}
         </Button>
       </div>
     );
+
+  if (statusQuery.isPending)
+    return <Loader2 className="m-6 size-5 animate-spin" />;
 
   return (
     <div className="space-y-6 p-4 md:p-6">
@@ -135,6 +141,11 @@ function IndexNowPage() {
         <p className="text-muted-foreground">
           {m['admin.indexnow.description']()}
         </p>
+        {status && (
+          <p className="text-muted-foreground mt-2 text-sm">
+            {m['admin.indexnow.site_origin']()}: <code>{status.origin}</code>
+          </p>
+        )}
       </div>
 
       {status && !status.publicSite && (
@@ -204,7 +215,7 @@ function IndexNowPage() {
         <CardContent className="space-y-3">
           {keyFileQuery.isError ? (
             <p role="alert" className="text-destructive text-sm">
-              {m['admin.indexnow.check_error']()}
+              {m['admin.indexnow.check_error']()} {keyFileQuery.error.message}
             </p>
           ) : statusQuery.isPending || keyFileQuery.isPending ? (
             status && !status.key ? (
@@ -273,6 +284,7 @@ function IndexNowPage() {
               !canSubmit ||
               !status?.key ||
               !status.publicSite ||
+              !keyFile?.ok ||
               submit.isPending
             }
           >
@@ -305,6 +317,7 @@ function IndexNowPage() {
                 !canSubmit ||
                 !status?.key ||
                 !status.publicSite ||
+                !keyFile?.ok ||
                 !urls.trim() ||
                 submit.isPending
               }

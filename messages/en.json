@@ -943,7 +943,7 @@
   "admin.settings.tips.payments_enabled": "Shows Payments (order history and invoices) in the user center.",
   "admin.settings.tips.apikeys_enabled": "Shows API Keys in the user center so users can create keys for your API. Off by default.",
   "admin.settings.tips.tickets_enabled": "Shows Support Tickets in the user center and the floating support button. Turn off if you handle support elsewhere; existing tickets stay in the admin panel.",
-  "admin.settings.tips.plausible_src": "Paste the script URL from Plausible. Accepted: an https URL on plausible.io, or a same-site proxy path like /js/script.js. For self-hosted Plausible, add its host to the server env var PLAUSIBLE_SCRIPT_HOSTS (comma-separated), then restart or redeploy. No rebuild needed.",
+  "admin.settings.tips.plausible_src": "Paste the complete HTTPS script URL from Plausible. plausible.io and stats.cadcraft.org are supported by default in every new project. Same-site proxy paths such as /js/script.js also work. Add other self-hosted script hosts to the server environment variable PLAUSIBLE_SCRIPT_HOSTS, then restart or redeploy.",
   "admin.settings.fields.cookie_consent_enabled": "Enable Cookie Banner",
   "admin.settings.tips.cookie_consent_enabled": "Recommended if you serve visitors in the EU/UK and use Google Analytics or AdSense.",
   "admin.settings.fields.adsense_code": "Publisher ID",
@@ -1005,8 +1005,8 @@
   "landing.features.payment.description": "Stripe, PayPal, Alipay, WeChat Pay — checkout, subscriptions, webhooks, and order management.",
   "landing.features.rbac.title": "Roles & Permissions",
   "landing.features.rbac.description": "Fine-grained RBAC with wildcard matching. Full admin panel for managing users, roles, and permissions.",
-  "landing.features.i18n.title": "Internationalization",
-  "landing.features.i18n.description": "English and Chinese built-in with locale-aware routing. Easy to extend with additional languages.",
+  "landing.features.i18n.title": "Consistent English UI",
+  "landing.features.i18n.description": "An English interface across landing pages, user dashboards, and admin tools.",
   "landing.features.cms.title": "Content Management",
   "landing.features.cms.description": "Categories and posts with full CRUD, status management, and admin panel — build your blog or docs.",
   "landing.features.credits.title": "Credit System",
@@ -1337,7 +1337,7 @@
   "admin.indexnow.forbidden": "You do not have permission to view IndexNow.",
   "admin.indexnow.load_error": "Could not load IndexNow settings. Please retry.",
   "admin.indexnow.check_error": "Could not check the key file. Please retry.",
-  "admin.indexnow.public_site_required": "Save and verify your key here. URL submission becomes available after the site is configured with a public domain.",
+  "admin.indexnow.public_site_required": "This website is configured with a local or private URL. Set VITE_APP_URL to its deployed public HTTPS address and redeploy before submitting. Local previews can save keys but cannot notify search engines.",
   "admin.indexnow.urls_label": "Page URLs (one per line)",
   "admin.nav.operations": "Operations",
   "admin.operations.title": "Operations, in focus.",
@@ -1423,5 +1423,6 @@
   "admin.operations.cancel": "Cancel",
   "admin.operations.save": "Save record",
   "admin.operations.saving": "Saving…",
-  "admin.operations.saved": "Experiment journal saved"
+  "admin.operations.saved": "Experiment journal saved",
+  "admin.indexnow.site_origin": "Configured public website"
 }

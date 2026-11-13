@@ -1054,7 +1054,7 @@ export function getSettings(): Setting[] {
       title: 'Script Src',
       type: 'text',
       placeholder: 'https://plausible.example.com/js/pa-XXXXX.js',
-      tip: 'Paste the complete site-specific script URL from Plausible, or leave blank to use the legacy cloud script. Accepts a same-site proxy path (e.g. /js/script.js) or an https URL on plausible.io; a self-hosted domain must be listed in the server env PLAUSIBLE_SCRIPT_HOSTS (restart or redeploy, no rebuild)',
+      tip: 'Paste the complete site-specific script URL from Plausible, or leave blank to use the legacy cloud script. Accepts a same-site proxy path (e.g. /js/script.js) or an https URL on plausible.io or stats.cadcraft.org; another self-hosted domain must be listed in the server env PLAUSIBLE_SCRIPT_HOSTS (restart or redeploy, no rebuild)',
       group: 'plausible',
       tab: 'analytics',
     },
@@ -1147,18 +1147,6 @@ export function getSettings(): Setting[] {
       tab: 'notify',
       // On by default: a new submission is money waiting for review.
       defaultValue: 'true',
-    },
-    {
-      name: 'notify_language',
-      title: 'Message language',
-      type: 'select',
-      options: [
-        { label: '中文', value: 'zh' },
-        { label: 'English', value: 'en' },
-      ],
-      group: 'notify_settings',
-      tab: 'notify',
-      defaultValue: 'zh',
     },
     {
       name: 'notify_timezone',

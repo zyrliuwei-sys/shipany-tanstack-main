@@ -784,6 +784,54 @@ test('post create/read/update/delete works through the common REST boundary', as
     200
   );
 });
+test('a new project can save, read and render the trusted Cadcraft Plausible script without environment configuration', async () => {
+  const { safeEmbedSetting } = await import('../src/lib/embed-ids');
+  const { createElement } = await import('react');
+  const { renderToStaticMarkup } = await import('react-dom/server');
+  const { Plausible } = await import('../src/components/analytics/plausible');
+  const names = ['PLAUSIBLE_SCRIPT_HOSTS', 'VITE_PLAUSIBLE_SCRIPT_HOSTS'];
+  const previous = names.map((name) => process.env[name]);
+  for (const name of names) delete process.env[name];
+  try {
+    const src = 'https://stats.cadcraft.org/js/pa-regression.js';
+    const response = await request(
+      'settings_update',
+      { plausible_domain: 'example.test', plausible_src: src },
+      fullToken,
+      'plausible-cadcraft-save'
+    );
+    assert.equal((await response.json()).code, 0);
+    const saved = (await (await request('settings_get', {})).json()).data;
+    assert.equal(saved.plausible_src, src);
+    const validated = safeEmbedSetting('plausible_src', saved.plausible_src);
+    assert.equal(validated, src);
+    assert.match(
+      renderToStaticMarkup(
+        createElement(Plausible, {
+          domain: saved.plausible_domain,
+          src: validated,
+        })
+      ),
+      /src="https:\/\/stats\.cadcraft\.org\/js\/pa-regression\.js"/
+    );
+    const denied = await request(
+      'settings_update',
+      { plausible_src: 'https://stats.cadcraft.org.evil.example/x.js' },
+      fullToken,
+      'plausible-cadcraft-deny'
+    );
+    assert.notEqual((await denied.json()).code, 0);
+    assert.equal(
+      (await (await request('settings_get', {})).json()).data.plausible_src,
+      src
+    );
+  } finally {
+    names.forEach((name, i) => {
+      if (previous[i] === undefined) delete process.env[name];
+      else process.env[name] = previous[i];
+    });
+  }
+});
 test('configuration secrets are masked and audit never exposes payloads or raw credentials', async () => {
   const secret = 'test-only-secret-value';
   assert.equal(

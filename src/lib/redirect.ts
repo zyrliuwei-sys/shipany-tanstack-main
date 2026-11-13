@@ -12,6 +12,7 @@
  *   attaches the session token. Only schemes the admin allow-lists are honored.
  */
 
+import { englishPathname } from '@/lib/english-only';
 import { deLocalizeHref } from '@/paraglide/runtime.js';
 
 // Never bounce back into an auth page — that loops.
@@ -41,6 +42,8 @@ export function safeInternalPath(
     }
   }
 
+  // Legacy callback URLs must also canonicalize during client navigation.
+  path = path.replace(/^[^?#]*/, (pathname) => englishPathname(pathname));
   return AUTH_PATH_RE.test(path) ? null : path;
 }
 
@@ -105,11 +108,10 @@ export function resolveAfterAuthUrl(params: {
 
 /**
  * Current path + query, for "bring me back here afterwards". De-localized
- * (`/zh/chat` → `/chat`) because internal hrefs in this app are locale-free —
- * the router rewrite adds the prefix back on the way out.
+ * and canonicalized to English because internal hrefs are locale-free.
  */
 export function currentPathWithQuery(fallback = '/'): string {
   if (typeof window === 'undefined') return fallback;
-  const path = deLocalizeHref(window.location.pathname);
+  const path = englishPathname(deLocalizeHref(window.location.pathname));
   return `${path}${window.location.search}`;
 }
