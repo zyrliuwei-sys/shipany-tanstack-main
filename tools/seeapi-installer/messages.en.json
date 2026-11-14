@@ -1,0 +1,7 @@
+{
+  "admin.settings.groups.seeapi.title": "SeeAPI",
+  "admin.settings.fields.seeapi_base_url": "Base URL",
+  "admin.settings.fields.seeapi_api_key": "API Key",
+  "admin.settings.tips.seeapi_base_url": "Use https://api.seeapi.com. Test checks authentication through the credits endpoint without creating a generation task.",
+  "admin.settings.tips.seeapi_api_key": "Create a key at https://www.seeapi.com/keys/?tab=api-keys. Saved keys are masked; leave the masked value unchanged to keep the current key."
+}

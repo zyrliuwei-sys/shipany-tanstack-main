@@ -46,6 +46,28 @@ exports, permission codes, and behavior that changes for end users.
 
 ---
 
+## 2026-11-14: SeeAPI credential settings and portable installer
+
+Admin → Settings → AI now includes SeeAPI (`seeapi_base_url`,
+`seeapi_api_key`). No schema migration or new provider environment variables
+are required. Enter the key in each project's own admin panel. Existing
+settings permissions, masking, optional `CONFIG_ENCRYPTION_KEY` encryption
+and public-config filtering apply. The connection check uses the official
+authenticated `GET /v1/credits` endpoint and creates no generation task.
+Keys are sent only to `https://api.seeapi.com`; `/v1` in the Base URL is
+normalized. Endpoint changes require re-entering the key.
+
+`saveConfigs` now uses atomic upserts instead of read-then-write interactive
+transactions. Multi-field saves roll back together on D1/SQLite, and
+concurrent first saves no longer race to insert duplicate names.
+
+For another compatible project, use `tools/seeapi-installer/install.mjs`.
+It performs preflight checks, backs up affected files, patches shared files
+without replacing other providers, and supports dry-run and guarded restore.
+No real keys, environment files or database content are packaged. See the
+installer README for prerequisites and commands. Rebuild/restart after
+installation; run `pnpm test:seeapi`, `pnpm test:admin` and `pnpm build`.
+
 ## 2026-11-13: Remove upstream product branding and demo articles
 
 Public/default copy now uses neutral account/workspace wording and the

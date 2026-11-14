@@ -28,6 +28,7 @@
     "test:operations": "node --import tsx --test tests/operations.test.ts",
     "test:english": "node --import tsx --test tests/english-only.test.ts",
     "test:copy": "node --import tsx --test tests/product-copy.test.ts",
+    "test:seeapi": "node --import tsx --test tests/seeapi.test.ts tests/seeapi-installer.test.mjs",
     "test:indexnow": "node --import tsx --test tests/indexnow.test.ts tests/indexnow-installer.test.mjs",
     "test:guest-posts": "node --import tsx --test tests/guest-posts.test.ts tests/guest-post-notify.test.ts",
     "test:payment": "node --import tsx --test tests/payment-idempotency.test.ts tests/payment-guards.test.ts tests/refund.test.ts",

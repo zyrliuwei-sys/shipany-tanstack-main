@@ -832,6 +832,93 @@ test('a new project can save, read and render the trusted Cadcraft Plausible scr
     });
   }
 });
+test('SeeAPI settings and tests respect admin permissions and reuse masked keys without leaking them', async () => {
+  const secret = 'seeapi-admin-isolated-test-key';
+  for (const operation of ['settings_update', 'settings_test']) {
+    const input =
+      operation === 'settings_test'
+        ? { group: 'seeapi', configs: { seeapi_api_key: secret } }
+        : { seeapi_api_key: secret };
+    assert.equal(
+      (await request(operation, input, readToken, `seeapi-denied-${operation}`))
+        .status,
+      403
+    );
+  }
+  assert.equal(
+    (
+      await request(
+        'settings_update',
+        {
+          seeapi_base_url: 'https://api.seeapi.com',
+          seeapi_api_key: secret,
+        },
+        fullToken,
+        'seeapi-save-key'
+      )
+    ).status,
+    200
+  );
+  const saved = await (await request('settings_get', {})).json();
+  const masked = saved.data.seeapi_api_key;
+  assert.match(masked, /^••••••••/);
+  assert(!JSON.stringify(saved).includes(secret));
+  const nativeFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async (input, init) => {
+    calls++;
+    assert.equal(String(input), 'https://api.seeapi.com/v1/credits');
+    assert.equal(
+      new Headers(init?.headers).get('Authorization'),
+      `Bearer ${secret}`
+    );
+    return Response.json({ credits: { balance: 10 } });
+  };
+  try {
+    const checked = await (
+      await request(
+        'settings_test',
+        {
+          group: 'seeapi',
+          configs: { seeapi_api_key: masked },
+        },
+        fullToken,
+        'seeapi-check-key'
+      )
+    ).json();
+    assert.equal(checked.data.success, true);
+    assert.equal(calls, 1);
+    assert(!JSON.stringify(checked).includes(secret));
+    const rejected = await request(
+      'settings_test',
+      {
+        group: 'seeapi',
+        configs: { seeapi_base_url: 'https://foreign.example' },
+      },
+      fullToken,
+      'seeapi-reject-key-forward'
+    );
+    assert.equal(rejected.status, 400);
+    assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = nativeFetch;
+  }
+  const { Route: publicConfig } =
+    await import('../src/routes/api/config/public');
+  const publicHandlers = publicConfig.options.server!.handlers as {
+    GET: (context: { request: Request }) => Promise<Response>;
+  };
+  const publicResponse = await publicHandlers.GET({
+    request: new Request('http://localhost:3000/api/config/public'),
+  });
+  assert(!(await publicResponse.text()).includes('seeapi_api_key'));
+  const audit = await access.listExecutions({
+    userId: fullAgentId,
+    pageSize: 100,
+  });
+  assert(!JSON.stringify(audit).includes(secret));
+});
+
 test('configuration secrets are masked and audit never exposes payloads or raw credentials', async () => {
   const secret = 'test-only-secret-value';
   assert.equal(

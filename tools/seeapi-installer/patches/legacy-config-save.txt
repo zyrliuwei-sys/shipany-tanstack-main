@@ -1,0 +1,16 @@
+  await db().transaction(async (tx: any) => {
+    for (const [name, value] of entries) {
+      const [existing] = await tx
+        .select()
+        .from(config)
+        .where(eq(config.name, name))
+        .limit(1);
+
+      if (existing) {
+        await tx.update(config).set({ value }).where(eq(config.name, name));
+      } else {
+        await tx.insert(config).values({ name, value });
+      }
+    }
+  });
+
